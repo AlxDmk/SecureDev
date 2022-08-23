@@ -1,6 +1,10 @@
+using CardStorageService.Controllers.Services;
+using CardStorageService.Controllers.Services.Impl;
+using CardStorageService.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -25,6 +29,14 @@ namespace CardStorageService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<CardStorageServiceDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration["Settings:DatabaseSettings:ConnectionString"]);
+            });
+
+            services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<ICardRepository, CardRepository>();
+
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
