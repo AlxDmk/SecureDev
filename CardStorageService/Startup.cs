@@ -34,6 +34,8 @@ namespace CardStorageService
                 options.UseSqlServer(Configuration["Settings:DatabaseSettings:ConnectionString"]);
             });
 
+            services.AddSingleton<IAuthenticateService, AuthenticateService>();
+           
             services.AddScoped<IClientRepository, ClientRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
 

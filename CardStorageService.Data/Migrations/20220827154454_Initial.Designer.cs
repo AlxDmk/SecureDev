@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CardStorageService.Data.Migrations
 {
     [DbContext(typeof(CardStorageServiceDbContext))]
-    [Migration("20220822200903_Initial")]
+    [Migration("20220827154454_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,6 +23,73 @@ namespace CardStorageService.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+
+            modelBuilder.Entity("CardStorageService.Data.Account", b =>
+                {
+                    b.Property<int>("AccountId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AccountId"), 1L, 1);
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PasswordSalt")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("AccountId");
+
+                    b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("CardStorageService.Data.AccountSession", b =>
+                {
+                    b.Property<int>("SessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SessionId"), 1L, 1);
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasMaxLength(384)
+                        .HasColumnType("nvarchar(384)");
+
+                    b.Property<DateTime?>("TimeClosed")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeLastRequest")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("AccountSessions");
+                });
 
             modelBuilder.Entity("CardStorageService.Data.Card", b =>
                 {
@@ -78,6 +145,17 @@ namespace CardStorageService.Data.Migrations
                     b.HasKey("ClientId");
 
                     b.ToTable("Clients");
+                });
+
+            modelBuilder.Entity("CardStorageService.Data.AccountSession", b =>
+                {
+                    b.HasOne("CardStorageService.Data.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("CardStorageService.Data.Card", b =>

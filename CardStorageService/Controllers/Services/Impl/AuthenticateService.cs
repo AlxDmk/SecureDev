@@ -1,0 +1,128 @@
+﻿using CardStorageService.Controllers.Models;
+using CardStorageService.Controllers.Models.Requests;
+using CardStorageService.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+
+namespace CardStorageService.Controllers.Services.Impl
+{
+    public class AuthenticateService : IAuthenticateService
+    {
+        private readonly Dictionary<string, SessionInfo> _sessions =
+            new Dictionary<string, SessionInfo>();
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        public const string SecretKey = "My secret key for token";
+
+        public AuthenticateService(IServiceScopeFactory serviceScopedFactory )
+        {
+            _serviceScopeFactory = serviceScopedFactory;
+        }
+
+        public SessionInfo GetSessionInfo(string sessionToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public AuthenticationResponse Login(AuthenticationRequest authenticationRequest)
+        {
+           using IServiceScope scope = _serviceScopeFactory.CreateScope();
+            CardStorageServiceDbContext context = scope.ServiceProvider.GetRequiredService<CardStorageServiceDbContext>();
+
+            Account account = 
+                !string.IsNullOrWhiteSpace(authenticationRequest.Login) ? 
+                FindAccountByLogin(context, authenticationRequest.Login) : null;
+
+            if (account == null)
+            {
+                return new AuthenticationResponse
+                {
+                    Status = AuthenticationStatus.UserNotFound
+                };
+            }
+
+            if (!PasswordUtils.VerifyPasswordHash(authenticationRequest.Password, account.PasswordSalt, account.PasswordHash))
+            {
+                return new AuthenticationResponse
+                {
+                    Status = AuthenticationStatus.InvalidPassword
+                };
+            }
+
+            AccountSession session = new AccountSession
+            {
+                AccountId = account.AccountId,
+                SessionToken = CreateSessionToken(account),
+                TimeCreated = System.DateTime.Now,
+                TimeLastRequest = System.DateTime.Now,
+                IsClosed = false,
+
+            };
+
+            context.AccountSessions.Add(session);
+            context.SaveChanges();
+
+            SessionInfo sessionInfo = GetSessionInfo(account, session);
+
+            lock (sessionInfo)
+            {
+                _sessions[sessionInfo.SessionToken] = sessionInfo;
+            }
+
+            return new AuthenticationResponse
+            {
+                Status = AuthenticationStatus.Success,
+                SessionInfo = sessionInfo
+            };
+
+        }
+
+        private SessionInfo GetSessionInfo(Account account, AccountSession accountSession)
+        {
+            return new SessionInfo
+            {
+                SessionId = accountSession.SessionId,
+                SessionToken = accountSession.SessionToken,
+                Account = new AccountDto
+                {
+                    AccountId = account.AccountId,
+                    Email = account.Email,
+                    Name = account.Name,
+                    Locked = account.Locked
+                }
+            };
+        }
+
+
+        private string CreateSessionToken(Account account)
+        {
+            JwtSecurityTokenHandler jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+            byte[] key = Encoding.ASCII.GetBytes(SecretKey);
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new System.Security.Claims.ClaimsIdentity(
+                    new Claim[]
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+                        new Claim(ClaimTypes.Name, account.Email)
+                    }
+                    ),
+                Expires = DateTime.Now.AddMinutes(15),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            SecurityToken token = jwtSecurityTokenHandler.CreateToken(tokenDescriptor);
+
+            return jwtSecurityTokenHandler.WriteToken(token);
+        }
+
+        private Account FindAccountByLogin(CardStorageServiceDbContext context, string login)
+        {
+            return context.Accounts.FirstOrDefault(account => account.Email == login);
+        }
+    }
+}

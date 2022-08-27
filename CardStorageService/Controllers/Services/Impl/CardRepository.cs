@@ -9,7 +9,7 @@ namespace CardStorageService.Controllers.Services.Impl
     public class CardRepository : ICardRepository
     {
         private readonly CardStorageServiceDbContext _context;
-        private readonly ILogger<CardRepository> _logger;
+        private readonly ILogger<CardRepository> _logger;        
 
         public CardRepository(CardStorageServiceDbContext context, ILogger<CardRepository> logger)
         {
@@ -23,7 +23,7 @@ namespace CardStorageService.Controllers.Services.Impl
                 throw new Exception("Client not found");
 
             _context.Add(data);
-
+             
             _context.SaveChanges();
 
             return data.CardId.ToString();
