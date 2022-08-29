@@ -16,7 +16,9 @@ namespace CardStorageService.Controllers.Services.Impl
     {
         private readonly Dictionary<string, SessionInfo> _sessions =
             new Dictionary<string, SessionInfo>();
+
         private readonly IServiceScopeFactory _serviceScopeFactory;
+
         public const string SecretKey = "My secret key for token";
 
         public AuthenticateService(IServiceScopeFactory serviceScopedFactory )
@@ -26,7 +28,35 @@ namespace CardStorageService.Controllers.Services.Impl
 
         public SessionInfo GetSessionInfo(string sessionToken)
         {
-            throw new System.NotImplementedException();
+            SessionInfo sessionInfo;
+            lock (_sessions)
+            {
+                _sessions.TryGetValue(sessionToken, out sessionInfo);                
+            }
+
+            if( sessionInfo == null)
+            {
+                using IServiceScope scope = _serviceScopeFactory.CreateScope();
+                CardStorageServiceDbContext context = scope.ServiceProvider.GetService<CardStorageServiceDbContext>();
+
+                AccountSession session = context.AccountSessions.FirstOrDefault(item =>item.SessionToken == sessionToken);
+                if (session == null)
+                    return null;                    
+
+                Account account = context.Accounts.FirstOrDefault(item => item.AccountId == session.AccountId);
+
+                sessionInfo = GetSessionInfo(account, session);
+
+                if(sessionInfo != null)
+                {
+                    lock (sessionInfo)
+                    {
+                        _sessions[sessionToken] = sessionInfo;
+                    }
+                }
+
+            }
+            return sessionInfo;
         }
 
         public AuthenticationResponse Login(AuthenticationRequest authenticationRequest)

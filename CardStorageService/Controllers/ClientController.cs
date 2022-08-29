@@ -1,5 +1,6 @@
 ﻿using CardStorageService.Controllers.Services;
 using CardStorageService.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using System;
 
 namespace CardStorageService.Controllers
 {
+    [Authorize]
     [Route("api/client")]
     [ApiController]
     public class ClientController : ControllerBase
@@ -46,8 +48,7 @@ namespace CardStorageService.Controllers
                     ErrorMessage = "Create client error"
 
                 });
-            }
-            
+            }            
         }
     }
 }
