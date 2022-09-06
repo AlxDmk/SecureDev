@@ -17,6 +17,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
+using CardStorageService.Controllers;
+using CardStorageService.Controllers.Mapping;
+using CardStorageService.Controllers.Models.Requests;
+using CardStorageService.Controllers.Models.Validations;
+using FluentValidation;
 
 namespace CardStorageService
 {
@@ -32,6 +38,21 @@ namespace CardStorageService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            #region Configure Fluent Validator
+            services.AddScoped<IValidator<AuthenticationRequest>, AuthenticationRequestValidator>();
+            services.AddScoped<IValidator<CreateCardRequest>, CreateCardRequestValidator>();
+            services.AddScoped<IValidator<CreateClientRequest>, CreateClientRequestValidator>();
+            #endregion
+
+            #region Configure Mapper
+
+            var mapperConfiguration = new MapperConfiguration(mp =>
+                mp.AddProfile(new MappingProfile()));
+            var mapper = mapperConfiguration.CreateMapper();
+            services.AddSingleton(mapper);
+
+            #endregion
+          
             services.AddDbContext<CardStorageServiceDbContext>(options =>
             {
                 options.UseSqlServer(Configuration["Settings:DatabaseSettings:ConnectionString"]);
