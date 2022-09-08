@@ -5,9 +5,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Protos\client.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="11.0.1" />
     <PackageReference Include="FluentValidation" Version="11.2.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.2.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.5" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.49.0-pre1" />
+    <PackageReference Include="Grpc.Tools" Version="2.49.0-pre3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.8">
       <PrivateAssets>all</PrivateAssets>
@@ -19,6 +29,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CardStorageService.Data\CardStorageService.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\client.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>
