@@ -38,6 +38,12 @@ namespace CardStorageService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            #region Configure gRPC
+
+            services.AddGrpc();
+            
+            #endregion
+
             #region Configure Fluent Validator
             services.AddScoped<IValidator<AuthenticationRequest>, AuthenticationRequestValidator>();
             services.AddScoped<IValidator<CreateCardRequest>, CreateCardRequestValidator>();
@@ -126,11 +132,18 @@ namespace CardStorageService
 
             app.UseRouting();
 
+            app.UseWhen(cnxt => cnxt.Request.ContentType != "application/grpc",
+                builder =>
+                {
+                    builder.UseHttpLogging();
+                });
+
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapGrpcService<ClientService>();
                 endpoints.MapControllers();
             });
         }
